@@ -1,279 +1,223 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React from "react";
+import AudioControl from "./AudioControl";
 
-type SectionId = "home" | "projects" | "contact";
-
-function scrollToId(id: SectionId) {
+function scrollToId(id: string) {
   const el = document.getElementById(id);
   if (!el) return;
   el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-function useActiveSection(ids: SectionId[]) {
-  const [active, setActive] = useState<SectionId>("home");
-
-  useEffect(() => {
-    const elements = ids
-      .map((id) => document.getElementById(id))
-      .filter(Boolean) as HTMLElement[];
-
-    if (!elements.length) return;
-
-    const io = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => (b.intersectionRatio ?? 0) - (a.intersectionRatio ?? 0))[0];
-
-        if (visible?.target?.id) {
-          setActive(visible.target.id as SectionId);
-        }
-      },
-      {
-        root: null,
-        threshold: [0.15, 0.25, 0.35, 0.5, 0.65],
-        rootMargin: "-25% 0px -55% 0px",
-      }
-    );
-
-    elements.forEach((el) => io.observe(el));
-    return () => io.disconnect();
-  }, [ids]);
-
-  return active;
-}
-
-function Icon({ children }: { children: React.ReactNode }) {
+function NavPill({
+  label,
+  icon,
+  active,
+  onClick,
+}: {
+  label: string;
+  icon: string;
+  active?: boolean;
+  onClick: () => void;
+}) {
   return (
-    <span
+    <button
+      type="button"
+      onClick={onClick}
       style={{
-        width: 18,
-        height: 18,
         display: "inline-flex",
         alignItems: "center",
-        justifyContent: "center",
-        opacity: 0.9,
+        gap: 10,
+        padding: "12px 18px",
+        borderRadius: 999,
+        border: "1px solid rgba(255,255,255,0.14)",
+        background: active ? "rgba(74,163,255,0.18)" : "rgba(0,0,0,0.25)",
+        color: "white",
+        fontWeight: 750,
+        cursor: "pointer",
+        backdropFilter: "blur(12px)",
+        boxShadow: active
+          ? "0 14px 40px rgba(0,0,0,0.35)"
+          : "0 12px 35px rgba(0,0,0,0.22)",
+        transition: "transform .15s ease, opacity .15s ease, background .2s ease",
+        whiteSpace: "nowrap",
       }}
+      onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.98)")}
+      onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+      onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
     >
-      {children}
-    </span>
+      <span style={{ fontSize: 18, lineHeight: 1 }}>{icon}</span>
+      {label}
+    </button>
   );
 }
 
-export default function Navbar() {
-  const ids = useMemo(() => ["home", "projects", "contact"] as SectionId[], []);
-  const active = useActiveSection(ids);
+function NavLinkDownload({
+  label,
+  icon,
+  href,
+}: {
+  label: string;
+  icon: string;
+  href: string;
+}) {
+  return (
+    <a
+      href={href}
+      download
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "12px 18px",
+        borderRadius: 999,
+        border: "1px solid rgba(255,255,255,0.14)",
+        background: "rgba(0,0,0,0.25)",
+        color: "white",
+        fontWeight: 750,
+        cursor: "pointer",
+        textDecoration: "none",
+        backdropFilter: "blur(12px)",
+        boxShadow: "0 12px 35px rgba(0,0,0,0.22)",
+        transition: "transform .15s ease, opacity .15s ease, background .2s ease",
+        whiteSpace: "nowrap",
+      }}
+      onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.98)")}
+      onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+      onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+      title="Télécharger le CV"
+    >
+      <span style={{ fontSize: 18, lineHeight: 1 }}>{icon}</span>
+      {label}
+    </a>
+  );
+}
 
-  const [open, setOpen] = useState(false);
-  const [showTop, setShowTop] = useState(false);
+export default function Navbar({
+  isPlaying,
+  volume,
+  toggle,
+  setVol,
+}: {
+  isPlaying: boolean;
+  volume: number;
+  toggle: () => void;
+  setVol: (v: number) => void;
+}) {
+  const [active, setActive] = React.useState<"home" | "projects" | "contact">(
+    "home"
+  );
 
-  // close on escape
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+  React.useEffect(() => {
+    const ids: Array<"home" | "projects" | "contact"> = [
+      "home",
+      "projects",
+      "contact",
+    ];
+
+    const onScroll = () => {
+      const y = window.scrollY + 120;
+      let current: typeof active = "home";
+
+      for (const id of ids) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        if (y >= el.offsetTop) current = id;
+      }
+      setActive(current);
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
 
-  // back-to-top visibility
-  useEffect(() => {
-    const onScroll = () => setShowTop(window.scrollY > 500);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const Item = ({
-    id,
-    label,
-    icon,
-  }: {
-    id: SectionId;
-    label: string;
-    icon: React.ReactNode;
-  }) => {
-    const isActive = active === id;
-    return (
-      <button
-        onClick={() => {
-          setOpen(false);
-          scrollToId(id);
-        }}
-        style={{
-          appearance: "none",
-          border: "1px solid rgba(255,255,255,0.14)",
-          background: isActive ? "rgba(74,163,255,0.18)" : "rgba(0,0,0,0.22)",
-          color: "white",
-          padding: "10px 12px",
-          borderRadius: 14,
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 10,
-          cursor: "pointer",
-          fontWeight: 750,
-          backdropFilter: "blur(10px)",
-          transition: "transform 0.12s ease, opacity 0.12s ease",
-          boxShadow: isActive ? "0 14px 40px rgba(0,0,0,0.35)" : "none",
-          opacity: isActive ? 1 : 0.92,
-        }}
-        onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.98)")}
-        onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
-        onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-      >
-        <Icon>{icon}</Icon>
-        {label}
-      </button>
-    );
-  };
-
   return (
-    <>
-      {/* Sticky Navbar */}
+    <div
+      style={{
+        position: "fixed",
+        top: 14,
+        left: "50%",
+        transform: "translateX(-50%)",
+        zIndex: 999,
+        width: "min(1180px, 92vw)",
+      }}
+    >
       <div
         style={{
-          position: "fixed",
-          top: 14,
-          left: "50%",
-          transform: "translateX(-50%)",
-          zIndex: 80,
-          width: "min(980px, 94vw)",
-          pointerEvents: "none",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 14,
+          padding: "12px 14px",
+          borderRadius: 22,
+          border: "1px solid rgba(255,255,255,0.12)",
+          background: "rgba(0,0,0,0.25)",
+          backdropFilter: "blur(14px)",
+          boxShadow: "0 22px 80px rgba(0,0,0,0.45)",
         }}
       >
-        <div
-          style={{
-            pointerEvents: "auto",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 12,
-            padding: "10px 12px",
-            borderRadius: 18,
-            border: "1px solid rgba(255,255,255,0.14)",
-            background: "rgba(0,0,0,0.25)",
-            backdropFilter: "blur(12px)",
-            boxShadow: "0 18px 60px rgba(0,0,0,0.35)",
-          }}
-        >
-          {/* Brand */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: 12,
-                background:
-                  "radial-gradient(12px 12px at 30% 30%, rgba(74,163,255,0.9) 0%, rgba(74,163,255,0.2) 60%, rgba(0,0,0,0) 100%)",
-                border: "1px solid rgba(255,255,255,0.14)",
-                boxShadow: "0 0 30px rgba(74,163,255,0.25)",
-              }}
-            />
-            <div style={{ lineHeight: 1.1 }}>
-              <div style={{ fontWeight: 900, letterSpacing: "-0.3px" }}>
-                ANGOUNE UDUMA idika lionnel
-              </div>
-              <div style={{ fontSize: 12, opacity: 0.72 }}>
-                Portfolio • 3D • Design
-              </div>
-            </div>
-          </div>
-
-          {/* Desktop menu */}
+        {/* Left identity */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div
             style={{
-              display: "flex",
-              gap: 10,
-              alignItems: "center",
+              width: 34,
+              height: 34,
+              borderRadius: 999,
+              background:
+                "radial-gradient(circle at 30% 30%, rgba(74,163,255,0.65), rgba(0,0,0,0.2) 60%)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
             }}
-          >
-            <div className="nav-desktop" style={{ display: "flex", gap: 10 }}>
-              <Item id="home" label="Accueil" icon={"🏠"} />
-              <Item id="projects" label="Projets" icon={"🧩"} />
-              <Item id="contact" label="Contact" icon={"✉️"} />
+          />
+          <div style={{ lineHeight: 1.1 }}>
+            <div style={{ fontWeight: 850, color: "white" }}>
+              ANGOUNE UDUMA idika lionnel
             </div>
-
-            {/* Mobile toggle */}
-            <button
-              onClick={() => setOpen((v) => !v)}
-              style={{
-                appearance: "none",
-                border: "1px solid rgba(255,255,255,0.14)",
-                background: "rgba(0,0,0,0.22)",
-                color: "white",
-                padding: "10px 12px",
-                borderRadius: 14,
-                cursor: "pointer",
-                fontWeight: 800,
-                backdropFilter: "blur(10px)",
-                display: "none",
-              }}
-              className="nav-mobile-toggle"
-              aria-label="Menu"
-              title="Menu"
-            >
-              {open ? "✕" : "☰"}
-            </button>
+            <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 13 }}>
+              Portfolio • 3D • Design
+            </div>
           </div>
         </div>
 
-        {/* Mobile panel */}
-        {open && (
-          <div
-            style={{
-              marginTop: 10,
-              borderRadius: 18,
-              border: "1px solid rgba(255,255,255,0.14)",
-              background: "rgba(0,0,0,0.28)",
-              backdropFilter: "blur(12px)",
-              boxShadow: "0 18px 60px rgba(0,0,0,0.35)",
-              padding: 12,
-              pointerEvents: "auto",
-              display: "grid",
-              gap: 10,
-            }}
-          >
-            <Item id="home" label="Accueil" icon={"🏠"} />
-            <Item id="projects" label="Projets" icon={"🧩"} />
-            <Item id="contact" label="Contact" icon={"✉️"} />
-          </div>
-        )}
-      </div>
-
-      {/* Back to top */}
-      {showTop && (
-        <button
-          onClick={() => scrollToId("home")}
+        {/* Right nav + audio */}
+        <div
           style={{
-            position: "fixed",
-            right: 18,
-            bottom: 18,
-            zIndex: 90,
-            appearance: "none",
-            border: "1px solid rgba(255,255,255,0.14)",
-            background: "rgba(0,0,0,0.26)",
-            color: "white",
-            padding: "12px 14px",
-            borderRadius: 16,
-            cursor: "pointer",
-            fontWeight: 850,
-            backdropFilter: "blur(12px)",
-            boxShadow: "0 18px 60px rgba(0,0,0,0.35)",
+            display: "flex",
+            gap: 10,
+            flexWrap: "wrap",
+            alignItems: "center",
           }}
-          title="Retour en haut"
         >
-          ↑
-        </button>
-      )}
+          <NavPill
+            label="Accueil"
+            icon="🏠"
+            active={active === "home"}
+            onClick={() => scrollToId("home")}
+          />
+          <NavPill
+            label="Projets"
+            icon="🧩"
+            active={active === "projects"}
+            onClick={() => scrollToId("projects")}
+          />
+          <NavPill
+            label="Contact"
+            icon="✉️"
+            active={active === "contact"}
+            onClick={() => scrollToId("contact")}
+          />
 
-      {/* Tiny CSS for mobile */}
-      <style>
-        {`
-          @media (max-width: 720px) {
-            .nav-desktop { display: none !important; }
-            .nav-mobile-toggle { display: inline-flex !important; }
-          }
-        `}
-      </style>
-    </>
+          <NavLinkDownload label="Mon CV" icon="📄" href="/cv-idika-lionnel.pdf" />
+
+          {/* ✅ Audio intégré (plus aucun chevauchement) */}
+          <AudioControl
+            isPlaying={isPlaying}
+            volume={volume}
+            toggle={toggle}
+            setVol={setVol}
+          />
+        </div>
+      </div>
+    </div>
   );
 }

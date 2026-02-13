@@ -4,62 +4,6 @@ import { OrbitControls, Stars, useTexture, Html, Line } from "@react-three/drei"
 import * as THREE from "three";
 
 /* =========================
-   AUDIO: Play/Pause + Volume
-========================= */
-function useIntroAudio() {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [audioReady, setAudioReady] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [volume, setVolume] = useState(0.3);
-
-  useEffect(() => {
-    const a = new Audio("/intro.mp3");
-    a.loop = true;
-    a.volume = volume;
-    audioRef.current = a;
-    return () => a.pause();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    const unlock = () => {
-      setAudioReady(true);
-      window.removeEventListener("pointerdown", unlock);
-    };
-    window.addEventListener("pointerdown", unlock);
-    return () => window.removeEventListener("pointerdown", unlock);
-  }, []);
-
-  const play = async () => {
-    const a = audioRef.current;
-    if (!a || !audioReady) return;
-    await a.play();
-    setIsPlaying(true);
-  };
-
-  const pause = () => {
-    const a = audioRef.current;
-    if (!a) return;
-    a.pause();
-    setIsPlaying(false);
-  };
-
-  const toggle = async () => {
-    if (isPlaying) pause();
-    else await play();
-  };
-
-  const setVol = (v: number) => {
-    const a = audioRef.current;
-    if (!a) return;
-    a.volume = v;
-    setVolume(v);
-  };
-
-  return { audioReady, isPlaying, volume, toggle, setVol };
-}
-
-/* =========================
    Loader
 ========================= */
 function Loader() {
@@ -321,13 +265,7 @@ function RoutesWow({
     <group>
       {data.arcs.map((a, idx) => (
         <group key={a.key}>
-          <Line
-            points={a.points}
-            color="#4aa3ff"
-            transparent
-            opacity={0.12}
-            lineWidth={3.8}
-          />
+          <Line points={a.points} color="#4aa3ff" transparent opacity={0.12} lineWidth={3.8} />
           <Line
             points={a.points}
             color="#4aa3ff"
@@ -483,7 +421,6 @@ function EarthGroup({
       </mesh>
 
       <AfricaHalo radius={radius} />
-
       <RoutesWow radius={radius} onHoverCity={onHoverCity} onClickCity={onClickCity} />
     </group>
   );
@@ -492,11 +429,15 @@ function EarthGroup({
 /* =========================
    Page
 ========================= */
-export default function EarthAfricaPage() {
-  const { audioReady, isPlaying, volume, toggle, setVol } = useIntroAudio();
-
+export default function EarthAfricaPage({
+  audioReady = true,
+}: {
+  audioReady?: boolean;
+}) {
   const [hoverCity, setHoverCity] = useState<string | null>(null);
-  const [hoverPos2D, setHoverPos2D] = useState<{ x: number; y: number } | null>(null);
+  const [hoverPos2D, setHoverPos2D] = useState<{ x: number; y: number } | null>(
+    null
+  );
 
   const [focusTarget, setFocusTarget] = useState<FocusTarget>(null);
   const controlsRef = useRef<any>(null);
@@ -521,56 +462,14 @@ export default function EarthAfricaPage() {
         fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
       }}
     >
-      {/* Audio UI */}
-      <div
-        style={{
-          position: "absolute",
-          top: 16,
-          right: 16,
-          zIndex: 30,
-          padding: "10px 12px",
-          borderRadius: 14,
-          background: "rgba(0,0,0,0.25)",
-          border: "1px solid rgba(255,255,255,0.15)",
-          backdropFilter: "blur(10px)",
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          pointerEvents: "auto",
-        }}
-      >
-        <button
-          onClick={toggle}
-          style={{
-            background: "none",
-            border: "none",
-            color: "white",
-            fontSize: 18,
-            cursor: "pointer",
-          }}
-          title={!audioReady ? "Clique d’abord sur la page" : undefined}
-        >
-          {isPlaying ? "⏸" : "▶️"}
-        </button>
-
-        <input
-          type="range"
-          min={0}
-          max={1}
-          step={0.01}
-          value={volume}
-          onChange={(e) => setVol(Number(e.target.value))}
-          style={{ width: 90, cursor: "pointer" }}
-        />
-      </div>
-
+      {/* ✅ Message (tu m’as dit : il est bien placé) */}
       {!audioReady && (
         <div
           style={{
             position: "absolute",
-            top: 16,
+            top: 92,
             left: 16,
-            zIndex: 30,
+            zIndex: 1200,
             padding: "10px 12px",
             borderRadius: 999,
             background: "rgba(0,0,0,0.22)",
@@ -635,7 +534,7 @@ export default function EarthAfricaPage() {
           }}
         >
           <div style={{ fontSize: "clamp(22px, 4vw, 42px)", fontWeight: 800 }}>
-            Bienvenue sur le portfolio 
+            Bienvenue sur le portfolio
           </div>
 
           <div
