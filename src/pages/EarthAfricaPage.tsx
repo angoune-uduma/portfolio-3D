@@ -275,9 +275,8 @@ function RoutesWow({
             dashed
             dashSize={0.055}
             gapSize={0.05}
-            onUpdate={(line) => {
-              // @ts-ignore
-              dashMats.current[idx] = line.material;
+            onUpdate={(line: any) => {
+            dashMats.current[idx] = line.material;
             }}
           />
         </group>
