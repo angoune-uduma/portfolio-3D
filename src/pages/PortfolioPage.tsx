@@ -97,7 +97,12 @@ const itemVariants = {
 export default function PortfolioPage() {
   return (
     <div style={{ width: "100%", minHeight: "100vh", background: "#000" }}>
-      <Navbar />
+      <Navbar
+        isPlaying={false}
+        volume={0.3}
+        toggle={() => {}}
+        setVol={() => {}}
+      />
 
       {/* ================= HERO ================= */}
       <section
