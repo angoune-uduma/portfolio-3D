@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/components/audiocontrol.tsx","./src/components/earthhero.tsx","./src/components/globecanvas.tsx","./src/components/navbar.tsx","./src/components/projectcard.tsx","./src/components/starsbackground.tsx","./src/data/projects.ts","./src/pages/earthafricapage.tsx","./src/pages/portfoliopage.tsx"],"version":"5.8.3"}
