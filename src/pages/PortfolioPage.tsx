@@ -144,7 +144,6 @@ function PCard({ project }: { project: any }) {
 ========================= */
 export default function PortfolioPage() {
   return (
-<<<<<<< HEAD
     <div style={{ width: "100%", minHeight: "100vh", background: C.bg, fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif", color: C.white }}>
 
       {/* ── NAV ── */}
